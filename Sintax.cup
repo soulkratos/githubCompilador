@@ -1,0 +1,226 @@
+package codigo;
+
+import java_cup.runtime.Symbol;
+import java.util.ArrayList;
+import codigo.TablaSimbolos;
+import java.util.List;
+import codigo.TablaSimbolosParser;
+
+parser code
+{:
+     private Symbol s;
+    
+    public void syntax_error(Symbol s){
+        this.s = s;
+    }
+
+    public Symbol getS(){
+        return this.s;
+}
+
+TablaSimbolosParser tS = new TablaSimbolosParser();
+
+:};
+
+terminal
+HTML_INICIO,
+    HTML_FIN,
+    HEADER_INICIO,
+    HEADER_FIN,
+    TITLE,
+    BODY_INICIO,
+    BODY_FIN,
+    TABLE_INICIO,
+    TABLE_FIN,
+    ROW_INICIO,
+    ROW_FIN,
+    LIST_INICIO,
+    LIST_FIN,
+    IMAGE_INICIO,
+    IMAGE_FIN,
+    Signo_Igual,
+    SIGNO_SUMA,
+    SIGNO_RESTA,
+    SIGNO_MULTIPLICACION,
+    AbreParentesis,
+    CierraParentesis,
+    Numero,
+    Numero_Decimal,
+    Email,
+    Titulo_Encabezado,
+    Link,
+    ETIQUETA_ALTURA,
+    ETIQUETA_ANCHO,
+    ETIQUETA_ENLACE,
+    ETIQUETA_COLUMNA,
+    ETIQUETA_NEGRITA,
+    ETIQUETA_IMPRIMIR,
+    ETIQUETA_BORDE,
+    ETIQUETA_PRUEBA,
+    NOMBRE,
+    COMILLA,
+    TEXTO,
+    DOS_PUNTOS,
+    IMAGEN_FOTO,
+    PUNTO_COMA,
+    COMA,
+    QUOT,
+    SIGNO_DIVISION,
+    STRING,
+    INTEGER,
+    FLOAT,
+    LISTA;
+
+non terminal
+     INICIO,S_COLUMNA,S_OPERADOR, S_CALCULO, S_ID,
+S_FILA, S_COLUMNAS, S_TABLA, S_LISTA,  S_CUERPO,S_ENLACE,
+S_HEAD, S_BODY, S_HTML, S_NEGRITA, S_IMPRIMIR, S_TITULO, S_IMAGE, S_CUERPOX, S_ASIGNACION, 
+ELEMENTOS, ELEMENTO, S_ID_ESPECIAL, S_TIPO, S_VAR, S_DECLARACION, tipo
+
+           ;
+
+start with INICIO;
+
+INICIO ::= HTML_INICIO {: parser.tS.getResultado().add("<html>"); :} S_HTML HTML_FIN {: parser.tS.getResultado().add("</html>"); :}
+;
+
+S_HTML::= S_HEAD S_BODY
+;
+
+S_HEAD::= HEADER_INICIO {: parser.tS.getResultado().add("<head>"); :} S_TITULO HEADER_FIN {: parser.tS.getResultado().add("</head>"); :}
+;
+
+S_TITULO::= TITLE Signo_Igual TEXTO:a {: parser.tS.getResultado().add("<title>"+String.valueOf(a)+"</title>"); :}
+;
+
+S_BODY::= BODY_INICIO:a {: parser.tS.getResultado().add("<body>"); :} S_CUERPOX BODY_FIN:b {: parser.tS.getResultado().add("</body>"); :}
+;
+
+S_CUERPOX::= S_CUERPO |
+             S_CUERPOX S_CUERPO
+;
+
+S_CUERPO::= S_TABLA |
+S_LISTA  |
+S_ENLACE |
+S_IMAGE |
+S_NEGRITA |
+S_IMPRIMIR |
+S_CALCULO |
+ETIQUETA_PRUEBA |
+S_ASIGNACION  |
+S_DECLARACION
+
+;
+
+S_IMAGE::= IMAGE_INICIO NOMBRE Signo_Igual S_ID S_ENLACE ETIQUETA_ANCHO DOS_PUNTOS Numero  ETIQUETA_ALTURA DOS_PUNTOS Numero  IMAGE_FIN |
+           IMAGE_INICIO IMAGEN_FOTO IMAGE_FIN
+;
+
+S_ENLACE::= ETIQUETA_ENLACE Signo_Igual Link:a {: parser.tS.getResultado().add("<a href="+a+"> enlace </a>"); :}
+;
+
+S_TABLA ::= TABLE_INICIO {: parser.tS.getResultado().add("<table>");   :} S_FILA TABLE_FIN  {: parser.tS.getResultado().add("</table>");   :}  |
+            TABLE_INICIO {: parser.tS.getResultado().add("<table border=1>");   :} ETIQUETA_BORDE Signo_Igual Numero S_FILA TABLE_FIN {: parser.tS.getResultado().add("</table>");   :}
+;
+
+S_FILA ::=    ROW_INICIO {: parser.tS.getResultado().add("<tr>"); :}  S_COLUMNAS ROW_FIN {: parser.tS.getResultado().add("</tr>"); :}  |
+   S_FILA ROW_INICIO {: parser.tS.getResultado().add("<tr>"); :}  S_COLUMNAS ROW_FIN {: parser.tS.getResultado().add("</tr>"); :}   
+;
+
+S_NEGRITA ::= ETIQUETA_NEGRITA {: parser.tS.getResultado().add("<strong>"); :} AbreParentesis S_ID CierraParentesis  {: parser.tS.getResultado().add(parser.tS.getSid()+"</strong>"); :} 
+                
+;
+
+S_IMPRIMIR ::= ETIQUETA_IMPRIMIR {: parser.tS.getResultado().add("<h1>");  :} AbreParentesis S_ID CierraParentesis {: parser.tS.getResultado().add(parser.tS.getScalculo()+"</h1>"); :}
+;
+S_COLUMNAS ::=  S_COLUMNA |
+               S_COLUMNAS  S_COLUMNA 
+                
+;
+
+S_COLUMNA ::= ETIQUETA_COLUMNA Signo_Igual  S_ID:a {: parser.tS.getResultado().add("<td>"+parser.tS.getSid()+"</td>"); :}  |
+              ETIQUETA_COLUMNA Signo_Igual S_IMAGE  
+;
+
+S_ID ::= TEXTO:a {: parser.tS.setSid(String.valueOf(a)); :} |
+         Numero:a {: parser.tS.setSid(String.valueOf(a)); :} |
+         Numero_Decimal:a {: parser.tS.setSid(String.valueOf(a)); :}   |  
+         COMILLA Numero:a {: parser.tS.setSid(String.valueOf(a)); :} COMILLA |
+         COMILLA Numero_Decimal:a {: parser.tS.setSid(String.valueOf(a)); :} COMILLA |
+         S_CALCULO  {: parser.tS.setSid(parser.tS.getScalculo()); :} |
+         S_ID TEXTO:a {: parser.tS.setSid(String.valueOf(a)); :} |
+         S_ID Numero:a {: parser.tS.setSid(String.valueOf(a)); :} |
+         S_ID Numero_Decimal:a {: parser.tS.setSid(String.valueOf(a)); :} |
+         Email:a {:  parser.tS.setSid(String.valueOf(a)); :}  |
+         S_ID Email:a {:  parser.tS.setSid(String.valueOf(a)); :} 
+;
+
+S_CALCULO ::= Numero:a S_OPERADOR Numero:b {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+            Numero_Decimal:a S_OPERADOR Numero_Decimal:b {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+            Numero:a S_OPERADOR Numero_Decimal:b {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+            Numero_Decimal:a S_OPERADOR Numero:b {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+            AbreParentesis S_CALCULO CierraParentesis  |
+            Numero:a S_OPERADOR Numero:b PUNTO_COMA  {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+  Numero_Decimal:a S_OPERADOR Numero_Decimal:b PUNTO_COMA  {: parser.tS.getResultado().add(parser.tS.calculo(String.valueOf(a),String.valueOf(parser.tS.getOperador()),String.valueOf(b))); :} |
+                    
+  S_CALCULO S_OPERADOR Numero |
+            S_CALCULO S_OPERADOR Numero_Decimal |
+            COMILLA S_CALCULO COMILLA 
+            
+;
+
+S_ASIGNACION ::= 
+TEXTO:a Signo_Igual S_CALCULO {: parser.tS.asignar(String.valueOf(a),String.valueOf(parser.tS.getScalculo())); :}
+;
+
+S_OPERADOR ::= Signo_Igual |
+    SIGNO_SUMA:a {: parser.tS.setOperador(String.valueOf(a)); :} |
+    SIGNO_RESTA:a {: parser.tS.setOperador(String.valueOf(a)); :} |
+    SIGNO_MULTIPLICACION:a {: parser.tS.setOperador(String.valueOf(a)); :} |
+    SIGNO_DIVISION:a {: parser.tS.setOperador(String.valueOf(a)); :}
+;
+
+S_LISTA ::= LIST_INICIO {: parser.tS.getResultado().add("<ol>"); :} LISTA:l {: parser.tS.getResultado().add(parser.tS.tLista(String.valueOf(l))); :} LIST_FIN {: parser.tS.getResultado().add("</ol>"); :}
+;
+
+S_DECLARACION ::= S_TIPO S_VAR PUNTO_COMA |
+                  TEXTO:a Signo_Igual Numero:b PUNTO_COMA {: parser.tS.asignar(String.valueOf(a),String.valueOf(b)); :} |
+                  TEXTO:a Signo_Igual Numero_Decimal:b PUNTO_COMA {: parser.tS.asignar(String.valueOf(a),String.valueOf(b)); :} 
+                  
+;
+
+S_VAR ::= TEXTO :b {: 
+       parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:} |
+          TEXTO:b Signo_Igual Numero {:  
+parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:} |
+          TEXTO:b Signo_Igual Numero_Decimal  {:  
+parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:} |
+          TEXTO:b COMA S_VAR  {:  
+parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:}  |
+          TEXTO:b Signo_Igual Numero COMA S_VAR {:  
+parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:} |
+          TEXTO:b Signo_Igual Numero_Decimal COMA S_VAR {:  
+parser.tS.buscar(String.valueOf(b),parser.tS.tipo);
+:} ; 
+
+
+S_TIPO ::= INTEGER:i {: parser.tS.setTipo(String.valueOf(i)); :} |
+             STRING:s {: parser.tS.setTipo(String.valueOf(s)); :} |
+             FLOAT:f {: parser.tS.setTipo(String.valueOf(f)); :};
+                  
+
+
+
+
+
+
+
+
+
+
